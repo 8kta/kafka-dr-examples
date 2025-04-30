@@ -5,7 +5,7 @@ The idea of this demo is to create a main cluster and a disaster recovery cluste
 ## Start the clusters
 
 ```shell
-    docker-compose up -d
+    docker compose up -d
 ```
 
 Two CP clusters are running:
