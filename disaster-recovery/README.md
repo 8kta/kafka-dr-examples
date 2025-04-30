@@ -26,14 +26,14 @@ Two CP clusters are running:
 
 ###  Create the topic `product` (and another topic)
 ```shell
-    docker-compose exec mainKafka kafka-topics --bootstrap-server mainKafka:19092 --topic product --create --partitions 1 --replication-factor 1
-    docker-compose exec mainKafka kafka-topics --bootstrap-server mainKafka:19092 --topic other-topic --create --partitions 1 --replication-factor 1
+    docker compose exec mainKafka kafka-topics --bootstrap-server mainKafka:19092 --topic product --create --partitions 1 --replication-factor 1
+    docker compose exec mainKafka kafka-topics --bootstrap-server mainKafka:19092 --topic other-topic --create --partitions 1 --replication-factor 1
 ```
 
 ### Open a consumer on main cluster
 
 ```shell
-    docker-compose exec mainSchemaregistry \
+    docker compose exec mainSchemaregistry \
         kafka-avro-console-consumer --bootstrap-server mainKafka:19092 \
         --property schema.registry.url=http://mainSchemaregistry:8085 \
         --group test-group \
@@ -43,7 +43,7 @@ Two CP clusters are running:
 
 ###  Produce some data (the last lines with the product data)
 ```shell
-   docker-compose exec mainSchemaregistry kafka-avro-console-producer \
+   docker compose exec mainSchemaregistry kafka-avro-console-producer \
     --bootstrap-server mainKafka:19092 \
     --topic product \
     --property value.schema.id=1 \
@@ -57,7 +57,7 @@ Two CP clusters are running:
 
 ### Check current offset
 ```shell
-docker-compose exec mainKafka kafka-consumer-groups --bootstrap-server mainKafka:19092 --group test-group --describe
+docker compose exec mainKafka kafka-consumer-groups --bootstrap-server mainKafka:19092 --group test-group --describe
 
 Consumer group 'test-group' has no active members.
 
@@ -72,13 +72,13 @@ As you can see offset is 2 (two messages consumed).
 ### Create a config file on main Schema Registry host.
 
 ```shell
-    docker-compose exec mainSchemaregistry bash -c '\
+    docker compose exec mainSchemaregistry bash -c '\
     echo "schema.registry.url=http://disasterSchemaregistry:8086" > /home/appuser/config.txt'
 ```
 
 ### Create the schema exporter 
 ```shell
-    docker-compose exec mainSchemaregistry bash -c '\
+    docker compose exec mainSchemaregistry bash -c '\
     schema-exporter --create --name main-to-disaster-sl --subjects "product-value" \
     --config-file ~/config.txt \
     --schema.registry.url http://mainSchemaregistry:8085 \
@@ -87,14 +87,14 @@ As you can see offset is 2 (two messages consumed).
 
 ### Validate exporter is working
 ```shell
-    docker-compose exec mainSchemaregistry bash -c '\
+    docker compose exec mainSchemaregistry bash -c '\
     schema-exporter --list \
     --schema.registry.url http://mainSchemaregistry:8085'
 ````
 
 ### Check the exporter is running
 ```shell
-    docker-compose exec mainSchemaregistry bash -c '\
+    docker compose exec mainSchemaregistry bash -c '\
     schema-exporter --get-status --name main-to-disaster-sl --schema.registry.url http://mainSchemaregistry:8085' | jq
 ```
 
@@ -109,7 +109,7 @@ As you can see offset is 2 (two messages consumed).
 
 ### Create config file to configure the cluster linking
 ```shell
-docker-compose exec disasterKafka bash -c '\
+docker compose exec disasterKafka bash -c '\
 echo "\
 bootstrap.servers=mainKafka:19092
 consumer.offset.sync.enable=true 
@@ -118,7 +118,7 @@ consumer.offset.group.filters="{\"groupFilters\": [{\"name\": \"*\",\"patternTyp
 ```
 ### Create the cluster link on the *destination* cluster. We are using some extra [configuration options](https://docs.confluent.io/platform/current/multi-dc-deployments/cluster-linking/configs.html#configuration-options).
 ```shell
-    docker-compose exec disasterKafka \
+    docker compose exec disasterKafka \
     kafka-cluster-links --bootstrap-server disasterKafka:29092 \
     --create --link main-to-disaster-cl \
     --config-file /home/appuser/cl.properties
@@ -126,7 +126,7 @@ consumer.offset.group.filters="{\"groupFilters\": [{\"name\": \"*\",\"patternTyp
 
 ### Create the mirroring
 ```shell
-    docker-compose exec disasterKafka \
+    docker compose exec disasterKafka \
     kafka-mirrors --create \
     --source-topic product \
     --mirror-topic product \
@@ -137,7 +137,7 @@ consumer.offset.group.filters="{\"groupFilters\": [{\"name\": \"*\",\"patternTyp
 ### Verifying cluster linking is up
 
 ```shell
-    docker-compose exec disasterKafka kafka-cluster-links --bootstrap-server disasterKafka:29092 --link main-to-disaster-cl --list
+    docker compose exec disasterKafka kafka-cluster-links --bootstrap-server disasterKafka:29092 --link main-to-disaster-cl --list
  ````
 
 Output is similar to `Link name: 'main-to-disaster-cl', link ID: 'CdDrHuV5Q5Sqyq0TCXnLsw', remote cluster ID: 'nBu7YnBiRsmDR_WilKe6Og', local cluster ID: '1wnpnQRORZ-C2tdxEStVtA', remote cluster available: 'true'`
@@ -145,7 +145,7 @@ Output is similar to `Link name: 'main-to-disaster-cl', link ID: 'CdDrHuV5Q5Sqyq
 ### Verifying consumer group offset is migrated
 
 ```shell
-docker-compose exec disasterKafka kafka-consumer-groups --bootstrap-server disasterKafka:29092 --group test-group --describe
+docker compose exec disasterKafka kafka-consumer-groups --bootstrap-server disasterKafka:29092 --group test-group --describe
 
 Consumer group 'test-group' has no active members.
 
@@ -158,7 +158,7 @@ Same results from source cluster.
 ### Verifying data is migrated
 
 ```shell
-    docker-compose exec disasterSchemaregistry \
+    docker compose exec disasterSchemaregistry \
         kafka-avro-console-consumer --bootstrap-server disasterKafka:29092 \
         --property schema.registry.url=http://disasterSchemaregistry:8086 \
         --from-beginning \
@@ -171,7 +171,7 @@ messages are migrated as expected
 ### Stop main cluster (and all consumer or producers you have created)
 
 ```shell
-docker-compose stop mainKafka mainZookeeper mainSchemaregistry mainControlCenter
+docker compose stop mainKafka mainZookeeper mainSchemaregistry mainControlCenter
 ```
 
 ## FAILOVER: Promote disaster cluster to principal cluster
@@ -183,7 +183,7 @@ docker-compose stop mainKafka mainZookeeper mainSchemaregistry mainControlCenter
 Note: we are using `--failover` because the main cluster is unavailable, if we want to sync before promoting the topic, we should use the option `--promote` instead.
 
 ```shell
-    docker-compose exec disasterKafka \
+    docker compose exec disasterKafka \
         kafka-mirrors --bootstrap-server disasterKafka:29092 \
         --failover --topics product
 ```
@@ -191,7 +191,7 @@ Note: we are using `--failover` because the main cluster is unavailable, if we w
 2. Verify that the mirror topic is not a mirror anymore
 
 ```shell
-    docker-compose exec disasterKafka \
+    docker compose exec disasterKafka \
         kafka-mirrors --bootstrap-server disasterKafka:29092 \
         --describe --topics product 
 ```
@@ -200,7 +200,7 @@ The result should have the `State: STOPPED` as part of it.
 
 ###  Produce some data (the last lines with the product data)
 ```shell
-   docker-compose exec disasterSchemaregistry \
+   docker compose exec disasterSchemaregistry \
    kafka-avro-console-producer \
     --bootstrap-server disasterKafka:29092 \
     --topic product \
@@ -236,7 +236,7 @@ Produce some data (the last lines with the product data)
 Note: as describe in [avro documentation](https://avro.apache.org/docs/1.10.2/spec.html#json_encoding). We need to define the type of the optional field to avoid collisions.
 
 ```shell
-   docker-compose exec disasterSchemaregistry \
+   docker compose exec disasterSchemaregistry \
    kafka-avro-console-producer \
     --bootstrap-server disasterKafka:29092 \
     --topic product \
@@ -252,7 +252,7 @@ Note: as describe in [avro documentation](https://avro.apache.org/docs/1.10.2/sp
 4. Verify new data is correctly produced and the consumer consumes from the new offset (ids 3 to 6).
 
 ```shell
-    docker-compose exec disasterSchemaregistry \
+    docker compose exec disasterSchemaregistry \
         kafka-avro-console-consumer --bootstrap-server disasterKafka:29092 \
         --property schema.registry.url=http://disasterSchemaregistry:8086 \
         --group test-group \
@@ -271,17 +271,17 @@ At this point, the topic `product` is a normal topic in the disaster cluster and
 Restart the main cluster
 
 ```shell
-docker-compose start mainKafka mainZookeeper mainSchemaregistry mainControlCenter
+docker compose start mainKafka mainZookeeper mainSchemaregistry mainControlCenter
 ```
 
 ### Remove the old schema linking (main to disaster)
 
 ```shell
 # pause is needed before deleting
-docker-compose exec mainSchemaregistry bash -c '\
+docker compose exec mainSchemaregistry bash -c '\
     schema-exporter --pause --name main-to-disaster-sl --schema.registry.url http://mainSchemaregistry:8085'
 # delete it
-docker-compose exec mainSchemaregistry bash -c '\
+docker compose exec mainSchemaregistry bash -c '\
     schema-exporter --delete --name main-to-disaster-sl --schema.registry.url http://mainSchemaregistry:8085'
 ```
 
@@ -293,7 +293,7 @@ Safest way is to trust the cluster and schema linking and remigrate data from di
 
 ```shell
 # delete topic
-docker-compose exec mainKafka kafka-topics --bootstrap-server mainKafka:19092 --topic product --delete
+docker compose exec mainKafka kafka-topics --bootstrap-server mainKafka:19092 --topic product --delete
 # delete the subject
 curl -v -X DELETE 'http://localhost:8085/subjects/product-value'
 curl -v -X DELETE 'http://localhost:8085/subjects/product-value?permanent=true'
@@ -304,14 +304,14 @@ curl -v -X DELETE 'http://localhost:8085/subjects/product-value?permanent=true'
 1. Create the config file
 
 ```shell
-docker-compose exec disasterSchemaregistry bash -c '\
+docker compose exec disasterSchemaregistry bash -c '\
   echo "schema.registry.url=http://mainSchemaregistry:8085" > /home/appuser/config.txt'
 ```
 
 2. Create the schema exporter 
 
 ```shell
-    docker-compose exec disasterSchemaregistry bash -c '\
+    docker compose exec disasterSchemaregistry bash -c '\
     schema-exporter --create --name disaster-to-main-sl --subjects "product-value" \
     --config-file ~/config.txt \
     --schema.registry.url http://disasterSchemaregistry:8086 \
@@ -321,7 +321,7 @@ docker-compose exec disasterSchemaregistry bash -c '\
 3. Validate exporter is working
    
 ```shell
-    docker-compose exec disasterSchemaregistry bash -c '\
+    docker compose exec disasterSchemaregistry bash -c '\
     schema-exporter --list \
     --schema.registry.url http://disasterSchemaregistry:8086'
 ````
@@ -329,7 +329,7 @@ docker-compose exec disasterSchemaregistry bash -c '\
 4. Check the exporter is running
 
 ```shell
-    docker-compose exec disasterSchemaregistry bash -c '\
+    docker compose exec disasterSchemaregistry bash -c '\
     schema-exporter --get-status --name disaster-to-main-sl --schema.registry.url http://disasterSchemaregistry:8086' | jq
 ```
 
@@ -345,7 +345,7 @@ docker-compose exec disasterSchemaregistry bash -c '\
 1. Create config file to configure the cluster linking
 
 ```shell
-docker-compose exec mainKafka bash -c '\
+docker compose exec mainKafka bash -c '\
 echo "\
 bootstrap.servers=disasterKafka:29092
 consumer.offset.sync.enable=true 
@@ -356,7 +356,7 @@ consumer.offset.group.filters="{\"groupFilters\": [{\"name\": \"*\",\"patternTyp
 2. Create the cluster link on the *destination* cluster. We are using some extra [configuration options](https://docs.confluent.io/platform/current/multi-dc-deployments/cluster-linking/configs.html#configuration-options).
 
 ```shell
-    docker-compose exec mainKafka \
+    docker compose exec mainKafka \
     kafka-cluster-links --bootstrap-server mainKafka:19092 \
     --create --link disaster-to-main-cl \
     --config-file /home/appuser/cl.properties
@@ -365,7 +365,7 @@ consumer.offset.group.filters="{\"groupFilters\": [{\"name\": \"*\",\"patternTyp
 3. Create the mirroring
    
 ```shell
-    docker-compose exec mainKafka \
+    docker compose exec mainKafka \
     kafka-mirrors --create \
     --source-topic product \
     --mirror-topic product \
@@ -376,7 +376,7 @@ consumer.offset.group.filters="{\"groupFilters\": [{\"name\": \"*\",\"patternTyp
 4. Verifying cluster linking is up
 
 ```shell
-    docker-compose exec mainKafka kafka-cluster-links --bootstrap-server mainKafka:19092 --link disaster-to-main-cl --list
+    docker compose exec mainKafka kafka-cluster-links --bootstrap-server mainKafka:19092 --link disaster-to-main-cl --list
  ````
 
 Output is similar to `Link name: 'disaster-to-main-cl', link ID: '-FPTBi8JQnGskNQzbrLLmA', remote cluster ID: 'KxjPLtiZQaWPId1UORsRvg', local cluster ID: '59HpxdWkSLSlnqjXnX_ZIw', remote cluster available: 'true'`
@@ -384,7 +384,7 @@ Output is similar to `Link name: 'disaster-to-main-cl', link ID: '-FPTBi8JQnGskN
 5. Verifying consumer group offset is migrated
 
 ```shell
-docker-compose exec mainKafka kafka-consumer-groups --bootstrap-server mainKafka:19092 --group test-group --describe
+docker compose exec mainKafka kafka-consumer-groups --bootstrap-server mainKafka:19092 --group test-group --describe
 
 Consumer group 'test-group' has no active members.
 
@@ -397,7 +397,7 @@ Same results from disaster cluster.
 6. Verifying data is migrated
 
 ```shell
-    docker-compose exec mainSchemaregistry \
+    docker compose exec mainSchemaregistry \
         kafka-avro-console-consumer --bootstrap-server mainKafka:19092 \
         --property schema.registry.url=http://mainSchemaregistry:8085 \
         --from-beginning \
@@ -414,7 +414,7 @@ We need to promote the topic and schema in the main cluster as normal topic and 
 Note: as the disaster cluster is up, we use the option `--promote` instead that will confirm all data is migrated.
 
 ```shell
-    docker-compose exec mainKafka \
+    docker compose exec mainKafka \
         kafka-mirrors --bootstrap-server mainKafka:19092 \
         --promote --topics product
 
@@ -427,7 +427,7 @@ Request for stopping topic product's mirror was successfully scheduled. Please u
 2. Verify that the mirror topic is not a mirror anymore
 
 ```shell
-    docker-compose exec mainKafka \
+    docker compose exec mainKafka \
         kafka-mirrors --bootstrap-server mainKafka:19092 \
         --describe --topics product 
 ```
@@ -438,10 +438,10 @@ The result should have the `State: STOPPED` as part of it.
 
 ```shell
 # pause is needed before deleting
-docker-compose exec disasterSchemaregistry bash -c '\
+docker compose exec disasterSchemaregistry bash -c '\
     schema-exporter --pause --name disaster-to-main-sl --schema.registry.url http://disasterSchemaregistry:8086'
 # delete it
-docker-compose exec disasterSchemaregistry bash -c '\
+docker compose exec disasterSchemaregistry bash -c '\
     schema-exporter --delete --name disaster-to-main-sl --schema.registry.url http://disasterSchemaregistry:8086'
 ```
 
@@ -465,7 +465,7 @@ docker-compose exec disasterSchemaregistry bash -c '\
 
 Produce some data (the last lines with the product data)
 ```shell
-   docker-compose exec mainSchemaregistry \
+   docker compose exec mainSchemaregistry \
    kafka-avro-console-producer \
     --bootstrap-server mainKafka:19092 \
     --topic product \
@@ -480,7 +480,7 @@ Produce some data (the last lines with the product data)
 3. Verify new data is correctly produced and the consumer consumes from the new offset (ids 3 to 6).
 
 ```shell
-    docker-compose exec mainSchemaregistry \
+    docker compose exec mainSchemaregistry \
         kafka-avro-console-consumer --bootstrap-server mainKafka:19092 \
         --property schema.registry.url=http://mainSchemaregistry:8085 \
         --group test-group \
