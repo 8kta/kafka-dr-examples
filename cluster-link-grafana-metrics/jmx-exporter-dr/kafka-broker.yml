@@ -156,7 +156,6 @@ rules:
     labels:
       quantile: "0.$4"
 
-  # Cluster Link
   - pattern: kafka.server.link<type=(.+),name=(.+),clientId=(.+),link-name=(.+)><>Value
     name: kafka_cluster_link_max_lag
     type: GAUGE

@@ -1,0 +1,7 @@
+lowercaseOutputLabelNames: true
+rules:
+  - pattern: 'kafka.server.link<type=ClusterLinkFetcherManager,name=(.+),clientId=ClusterLink,link-name=(.+)><>Value'
+    name: kafka_clusterlink_max_lag
+    type: GAUGE
+    labels:
+      link_name: "$1"

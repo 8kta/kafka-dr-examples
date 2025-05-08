@@ -1,9 +1,27 @@
----
-version: "2.2"
 services:
   ################  ################  ################  ################
   #                            SOURCE CLUSTER
   ################  ################  ################  ################
+  prometheus:
+    image: prom/prometheus:v2.47.2
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus:/etc/prometheus
+
+  alertmanager:
+    image: prom/alertmanager:v0.26.0
+    ports:
+      - "19093:9093"
+
+  grafana:
+    image: grafana/grafana:9.1.7
+    ports:
+      - "3000:3000"
+    volumes:
+      - grafana-data:/var/lib/grafana
+      - ./grafana/provisioning:/etc/grafana/provisioning
+
   mainZookeeper:
     image: ${REPOSITORY}/cp-zookeeper:${CONFLUENT_DOCKER_TAG}
     restart: always
@@ -14,6 +32,9 @@ services:
       ZOOKEEPER_CLIENT_PORT: "2181"
       ZOOKEEPER_TICK_TIME: "2000"
       KAFKA_OPTS: "-Dzookeeper.4lw.commands.whitelist=*"
+      EXTRA_ARGS: -javaagent:/usr/share/jmx_exporter/jmx_prometheus_javaagent-0.20.0.jar=9200:/usr/share/jmx_exporter/zookeeper.yml
+    volumes:
+      - ./jmx-exporter:/usr/share/jmx_exporter/
     ports:
       - "2181:2181"
   mainKafka:
@@ -38,6 +59,9 @@ services:
       KAFKA_CONFLUENT_SUPPORT_METRICS_ENABLE: "false"
       CONFLUENT_HTTP_SERVER_LISTENERS: "http://0.0.0.0:8090"
       CONFLUENT_SCHEMA_REGISTRY_URL: "http://mainSchemaregistry:8085" #8081
+      KAFKA_OPTS: -javaagent:/usr/share/jmx_exporter/jmx_prometheus_javaagent-0.20.0.jar=9200:/usr/share/jmx_exporter/kafka-broker.yml
+    volumes:
+      - ./jmx-exporter:/usr/share/jmx_exporter/
   mainSchemaregistry:
     image: ${REPOSITORY}/cp-schema-registry:${CONFLUENT_DOCKER_TAG}
     container_name: mainSchemaregistry
@@ -54,6 +78,9 @@ services:
       SCHEMA_REGISTRY_RESOURCE_EXTENSION_CLASS: io.confluent.schema.exporter.SchemaExporterResourceExtension
       SCHEMA_REGISTRY_KAFKASTORE_UPDATE_HANDLERS: io.confluent.schema.exporter.storage.SchemaExporterUpdateHandler
       SCHEMA_REGISTRY_PASSWORD_ENCODER_SECRET: mysecret
+      KAFKA_OPTS: -javaagent:/usr/share/jmx_exporter/jmx_prometheus_javaagent-0.20.0.jar=9200:/usr/share/jmx_exporter/kafka-broker.yml
+    volumes:
+      - ./jmx-exporter:/usr/share/jmx_exporter/
     ports:
       - 8085:8085
   mainControlCenter:
@@ -93,6 +120,9 @@ services:
       ZOOKEEPER_SERVER_ID: 1
       ZOOKEEPER_CLIENT_PORT: "2281"
       ZOOKEEPER_TICK_TIME: "2000"
+      EXTRA_ARGS: -javaagent:/usr/share/jmx_exporter/jmx_prometheus_javaagent-0.20.0.jar=9200:/usr/share/jmx_exporter/zookeeper.yml
+    volumes:
+      - ./jmx-exporter:/usr/share/jmx_exporter/
     ports:
       - "2281:2281"
   disasterKafka:
@@ -116,6 +146,9 @@ services:
       KAFKA_AUTO_CREATE_TOPICS_ENABLE: "false"
       CONFLUENT_HTTP_SERVER_LISTENERS: "http://0.0.0.0:8091"
       CONFLUENT_SCHEMA_REGISTRY_URL: "http://disasterSchemaregistry:8086" #8082
+      KAFKA_OPTS: -javaagent:/usr/share/jmx_exporter/jmx_prometheus_javaagent-0.20.0.jar=9200:/usr/share/jmx_exporter/kafka-broker.yml
+    volumes:
+      - ./jmx-exporter:/usr/share/jmx_exporter/
   disasterSchemaregistry:
     image: ${REPOSITORY}/cp-schema-registry:${CONFLUENT_DOCKER_TAG}
     container_name: disasterSchemaregistry
@@ -133,6 +166,9 @@ services:
       SCHEMA_REGISTRY_RESOURCE_EXTENSION_CLASS: io.confluent.schema.exporter.SchemaExporterResourceExtension
       SCHEMA_REGISTRY_KAFKASTORE_UPDATE_HANDLERS: io.confluent.schema.exporter.storage.SchemaExporterUpdateHandler
       SCHEMA_REGISTRY_PASSWORD_ENCODER_SECRET: mysecret
+      KAFKA_OPTS: -javaagent:/usr/share/jmx_exporter/jmx_prometheus_javaagent-0.20.0.jar=9200:/usr/share/jmx_exporter/kafka-broker.yml
+    volumes:
+      - ./jmx-exporter:/usr/share/jmx_exporter/
     ports:
       - 8086:8086
   disasterControlCenter:
@@ -157,3 +193,6 @@ services:
       CONTROL_CENTER_UI_AUTOUPDATE_ENABLE: "false"
       CONTROL_CENTER_COMMAND_TOPIC_REPLICATION: 1
       CONTROL_CENTER_METRICS_TOPIC_REPLICATION: 1
+
+volumes:
+  grafana-data:
