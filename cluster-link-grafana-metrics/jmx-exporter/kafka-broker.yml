@@ -155,3 +155,9 @@ rules:
     type: GAUGE
     labels:
       quantile: "0.$4"
+
+  - pattern: kafka.server.link<type=(.+),name=(.+),clientId=(.+),link-name=(.+)><>Value
+    name: kafka_cluster_link_max_lag
+    type: GAUGE
+    labels:
+      link_name: "$2"

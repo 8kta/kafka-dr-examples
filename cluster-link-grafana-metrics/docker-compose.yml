@@ -12,7 +12,7 @@ services:
       - "19093:9093"
 
   grafana:
-    image: grafana/grafana:5.2.1
+    image: grafana/grafana:9.1.7
     ports:
       - "3000:3000"
     volumes:
