@@ -31,7 +31,7 @@ services:
       ZOOKEEPER_SERVER_ID: 1
       ZOOKEEPER_CLIENT_PORT: "2181"
       ZOOKEEPER_TICK_TIME: "2000"
-      EXTRA_ARGS: "-Dzookeeper.4lw.commands.whitelist=*"
+      KAFKA_OPTS: "-Dzookeeper.4lw.commands.whitelist=*"
       EXTRA_ARGS: -javaagent:/usr/share/jmx_exporter/jmx_prometheus_javaagent-0.20.0.jar=9200:/usr/share/jmx_exporter/zookeeper.yml
     volumes:
       - ./jmx-exporter:/usr/share/jmx_exporter/
@@ -106,7 +106,7 @@ services:
       CONTROL_CENTER_COMMAND_TOPIC_REPLICATION: 1
       CONTROL_CENTER_METRICS_TOPIC_REPLICATION: 1
       CONTROL_CENTER_KAFKA_SRC_BOOTSTRAP_SERVERS: 'mainKafka:19091'
-  
+
 
   ################  ################  ################  ################
   #                        DISASTER RECOVERY CLUSTER
@@ -120,6 +120,7 @@ services:
       ZOOKEEPER_SERVER_ID: 1
       ZOOKEEPER_CLIENT_PORT: "2281"
       ZOOKEEPER_TICK_TIME: "2000"
+      KAFKA_OPTS: "-Dzookeeper.4lw.commands.whitelist=*"
       EXTRA_ARGS: -javaagent:/usr/share/jmx_exporter/jmx_prometheus_javaagent-0.20.0.jar=9200:/usr/share/jmx_exporter/zookeeper.yml
     volumes:
       - ./jmx-exporter:/usr/share/jmx_exporter/
