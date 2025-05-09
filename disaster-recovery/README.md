@@ -116,11 +116,27 @@ consumer.offset.sync.enable=true
 consumer.offset.group.filters="{\"groupFilters\": [{\"name\": \"*\",\"patternType\": \"LITERAL\",\"filterType\": \"INCLUDE\"}]}"
 " > /home/appuser/cl.properties'
 ```
+```poweshell
+docker compose exec disasterKafka bash -c @"
+echo '
+bootstrap.servers=mainKafka:19092
+consumer.offset.sync.enable=true
+consumer.offset.group.filters={\"groupFilters\": [{\"name\": \"*\",\"patternType\": \"LITERAL\",\"filterType\": \"INCLUDE\"}]}
+' > /home/appuser/cl.properties
+"@
+```
 ### Create the cluster link on the *destination* cluster. We are using some extra [configuration options](https://docs.confluent.io/platform/current/multi-dc-deployments/cluster-linking/configs.html#configuration-options).
 ```shell
     docker compose exec disasterKafka \
     kafka-cluster-links --bootstrap-server disasterKafka:29092 \
     --create --link main-to-disaster-cl \
+    --config-file /home/appuser/cl.properties
+``` 
+
+```powershell
+    docker compose exec disasterKafka `
+    kafka-cluster-links --bootstrap-server disasterKafka:29092 `
+    --create --link main-to-disaster-cl `
     --config-file /home/appuser/cl.properties
 ``` 
 

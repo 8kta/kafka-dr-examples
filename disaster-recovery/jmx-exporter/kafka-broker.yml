@@ -157,8 +157,8 @@ rules:
       quantile: "0.$4"
 
   # Cluster Link
-  - pattern: kafka.server.link<type=(.+),name=(.+),clientId=(.+),link-name=(.+)><>Value
+  - pattern: kafka.server.link<type=ClusterLinkFetcherManager,name=MaxLag,clientId=ClusterLink,link-name=(.+)>
     name: kafka_cluster_link_max_lag
     type: GAUGE
     labels:
-      link_name: "$2"
+      link_name: "$1"
