@@ -31,7 +31,7 @@ services:
       ZOOKEEPER_SERVER_ID: 1
       ZOOKEEPER_CLIENT_PORT: "2181"
       ZOOKEEPER_TICK_TIME: "2000"
-      KAFKA_OPTS: "-Dzookeeper.4lw.commands.whitelist=*"
+      EXTRA_ARGS: "-Dzookeeper.4lw.commands.whitelist=*"
       EXTRA_ARGS: -javaagent:/usr/share/jmx_exporter/jmx_prometheus_javaagent-0.20.0.jar=9200:/usr/share/jmx_exporter/zookeeper.yml
     volumes:
       - ./jmx-exporter:/usr/share/jmx_exporter/
@@ -59,7 +59,7 @@ services:
       KAFKA_CONFLUENT_SUPPORT_METRICS_ENABLE: "false"
       CONFLUENT_HTTP_SERVER_LISTENERS: "http://0.0.0.0:8090"
       CONFLUENT_SCHEMA_REGISTRY_URL: "http://mainSchemaregistry:8085" #8081
-      KAFKA_OPTS: -javaagent:/usr/share/jmx_exporter/jmx_prometheus_javaagent-0.20.0.jar=9200:/usr/share/jmx_exporter/kafka-broker.yml
+      EXTRA_ARGS: -javaagent:/usr/share/jmx_exporter/jmx_prometheus_javaagent-0.20.0.jar=9200:/usr/share/jmx_exporter/kafka-broker.yml
     volumes:
       - ./jmx-exporter:/usr/share/jmx_exporter/
   mainSchemaregistry:
@@ -78,7 +78,7 @@ services:
       SCHEMA_REGISTRY_RESOURCE_EXTENSION_CLASS: io.confluent.schema.exporter.SchemaExporterResourceExtension
       SCHEMA_REGISTRY_KAFKASTORE_UPDATE_HANDLERS: io.confluent.schema.exporter.storage.SchemaExporterUpdateHandler
       SCHEMA_REGISTRY_PASSWORD_ENCODER_SECRET: mysecret
-      KAFKA_OPTS: -javaagent:/usr/share/jmx_exporter/jmx_prometheus_javaagent-0.20.0.jar=9200:/usr/share/jmx_exporter/kafka-broker.yml
+      EXTRA_ARGS: -javaagent:/usr/share/jmx_exporter/jmx_prometheus_javaagent-0.20.0.jar=9200:/usr/share/jmx_exporter/kafka-broker.yml
     volumes:
       - ./jmx-exporter:/usr/share/jmx_exporter/
     ports:
@@ -146,7 +146,7 @@ services:
       KAFKA_AUTO_CREATE_TOPICS_ENABLE: "false"
       CONFLUENT_HTTP_SERVER_LISTENERS: "http://0.0.0.0:8091"
       CONFLUENT_SCHEMA_REGISTRY_URL: "http://disasterSchemaregistry:8086" #8082
-      KAFKA_OPTS: -javaagent:/usr/share/jmx_exporter/jmx_prometheus_javaagent-0.20.0.jar=9200:/usr/share/jmx_exporter/kafka-broker.yml
+      EXTRA_ARGS: -javaagent:/usr/share/jmx_exporter/jmx_prometheus_javaagent-0.20.0.jar=9200:/usr/share/jmx_exporter/kafka-broker.yml
     volumes:
       - ./jmx-exporter:/usr/share/jmx_exporter/
   disasterSchemaregistry:
@@ -166,7 +166,7 @@ services:
       SCHEMA_REGISTRY_RESOURCE_EXTENSION_CLASS: io.confluent.schema.exporter.SchemaExporterResourceExtension
       SCHEMA_REGISTRY_KAFKASTORE_UPDATE_HANDLERS: io.confluent.schema.exporter.storage.SchemaExporterUpdateHandler
       SCHEMA_REGISTRY_PASSWORD_ENCODER_SECRET: mysecret
-      KAFKA_OPTS: -javaagent:/usr/share/jmx_exporter/jmx_prometheus_javaagent-0.20.0.jar=9200:/usr/share/jmx_exporter/kafka-broker.yml
+      EXTRA_ARGS: -javaagent:/usr/share/jmx_exporter/jmx_prometheus_javaagent-0.20.0.jar=9200:/usr/share/jmx_exporter/kafka-broker.yml
     volumes:
       - ./jmx-exporter:/usr/share/jmx_exporter/
     ports:
